@@ -10,6 +10,8 @@ function Register({ onRegisterModel, onRegisterClose }) {
   const dispatch = useDispatch();
 
   const [step, setStep] = useState(1); // 1: kayıt, 2: kod
+
+  // İnputtan Gelen Verilerin Depolanması
   const [formData, setFormData] = useState({
     fullName: "",
     companyName: "",
@@ -17,12 +19,13 @@ function Register({ onRegisterModel, onRegisterClose }) {
     password: "",
     code: "",
   });
-
+  // İnput Değerleri Alma
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Formu Submit Edilmesi
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -33,6 +36,7 @@ function Register({ onRegisterModel, onRegisterClose }) {
           icon: "success",
           title: "Doğrulama Kodu Gönderildi",
           text: "Doğrulama kodu e-posta adresinize gönderildi.",
+          confirmButtonText: "Tamam",
         });
         setStep(2); // doğrulama adımına geç
       } else if (result.status === "success") {
@@ -40,6 +44,7 @@ function Register({ onRegisterModel, onRegisterClose }) {
           icon: "success",
           title: "Başarılı",
           text: result.message || "Hesabınız başarıyla oluşturuldu.",
+          confirmButtonText: "Tamam",
         });
         setStep(1);
         setFormData({
@@ -55,6 +60,7 @@ function Register({ onRegisterModel, onRegisterClose }) {
           icon: "error",
           title: "Hata",
           text: result.message || "Geçersiz doğrulama kodu.",
+          confirmButtonText: "Tamam",
         });
       } else {
         await Swal.fire({
@@ -68,7 +74,9 @@ function Register({ onRegisterModel, onRegisterClose }) {
         icon: "error",
         title: "Sunucu Hatası",
         text: "Lütfen daha sonra tekrar deneyiniz.",
+        confirmButtonText: "Tamam",
       });
+      console.log(error);
     }
   };
 
