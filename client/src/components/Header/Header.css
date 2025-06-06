@@ -1,0 +1,120 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  height: 70px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.header__logo__wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.header__logo {
+  height: 42px;
+  width: auto;
+  transition: transform 0.3s ease;
+}
+.header__logo:hover {
+  transform: rotate(5deg) scale(1.05);
+}
+.header__brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f1f1f;
+  letter-spacing: 0.5px;
+}
+
+.header__brand-name .highlight {
+  color: #1890ff;
+}
+.header__navlinks__wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.header__navlinks ul {
+  list-style: none;
+  display: flex;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+}
+
+.header__navlinks ul li a {
+  text-decoration: none;
+  color: #333333;
+  font-weight: 500;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+.header__navlinks ul li a:hover {
+  color: #1890ff;
+}
+
+.header__action__wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.header__action__wrapper .anticon {
+  font-size: 20px;
+  color: #1890ff;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.header__action__wrapper .anticon:hover {
+  transform: scale(1.2);
+}
+
+.header__action__wrapper__user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f5f5f5;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.header__action__wrapper__user:hover {
+  background-color: #e6f7ff;
+}
+
+.header__action__wrapper__user__image {
+  height: 30px;
+  width: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.header__action__wrapper__user__name {
+  font-size: 14px;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .header__navlinks__wrapper {
+    display: none;
+  }
+
+  .header__action__wrapper {
+    gap: 1rem;
+  }
+
+  .header__action__wrapper__user__name {
+    display: none;
+  }
+}

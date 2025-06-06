@@ -1,0 +1,69 @@
+.sidebar {
+  width: 250px;
+  background-color: #1f2937;
+  color: #e5e7eb;
+  height: 100vh;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: "Poppins", sans-serif;
+  user-select: none;
+  border-right: 1px solid #374151;
+}
+
+.sidebar__title {
+  font-size: 1rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 0.3rem;
+  color: #3b82f6;
+}
+
+.sidebar__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar__item {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  outline: none;
+}
+
+.sidebar__item-icon {
+  font-weight: 700;
+  margin-right: 0.8rem;
+  color: #3b82f6;
+  user-select: none;
+}
+
+.sidebar__item-name {
+  flex-grow: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar__item:hover,
+.sidebar__item:focus {
+  background-color: #374151;
+  color: #ffffff;
+}
+.sidebar__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar__list::-webkit-scrollbar-thumb {
+  background-color: #3b82f6;
+  border-radius: 3px;
+}
