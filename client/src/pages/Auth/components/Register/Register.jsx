@@ -8,6 +8,7 @@ import { submitAuthInfo } from "../../../../redux/slices/authSlice";
 
 function Register({ onRegisterModel, onRegisterClose }) {
   const dispatch = useDispatch();
+  const [modal, contextHolder] = Modal.useModal();
 
   const [step, setStep] = useState(1); // 1: kayıt, 2: kod
 
@@ -32,19 +33,16 @@ function Register({ onRegisterModel, onRegisterClose }) {
       const result = await dispatch(submitAuthInfo(formData)).unwrap();
 
       if (result.status === "code_sent") {
-        await Swal.fire({
-          icon: "success",
+        modal.success({
           title: "Doğrulama Kodu Gönderildi",
           text: "Doğrulama kodu e-posta adresinize gönderildi.",
-          confirmButtonText: "Tamam",
         });
+
         setStep(2); // doğrulama adımına geç
       } else if (result.status === "success") {
-        await Swal.fire({
-          icon: "success",
+        modal.success({
           title: "Başarılı",
-          text: result.message || "Hesabınız başarıyla oluşturuldu.",
-          confirmButtonText: "Tamam",
+          content: "Giriş işleminiz başarılı.",
         });
         setStep(1);
         setFormData({
@@ -56,25 +54,20 @@ function Register({ onRegisterModel, onRegisterClose }) {
         });
         onRegisterClose();
       } else if (result.status === "invalid_code") {
-        await Swal.fire({
-          icon: "error",
+        modal.error({
           title: "Hata",
-          text: result.message || "Geçersiz doğrulama kodu.",
-          confirmButtonText: "Tamam",
+          content: "Doğrulama kodu geçersiz.",
         });
       } else {
-        await Swal.fire({
-          icon: "error",
+        modal.error({
           title: "Hata",
-          text: result.message || "Beklenmedik bir hata oluştu.",
+          content: result.message || "Beklenmedik Bir Hata!",
         });
       }
     } catch (error) {
-      await Swal.fire({
-        icon: "error",
+      modal.error({
         title: "Sunucu Hatası",
-        text: "Lütfen daha sonra tekrar deneyiniz.",
-        confirmButtonText: "Tamam",
+        content: "Lütfen daha sonra tekrar deneyiniz.",
       });
       console.log(error);
     }
