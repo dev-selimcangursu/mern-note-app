@@ -7,27 +7,23 @@ const sendEmail = require("../utils/sendEmail");
 require("dotenv").config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-let verificationCodes = {};
+const CODE_EXPIRATION_TIME = 10 * 60 * 1000; // 10 dakika ms olarak
 
+let verificationCodes = {}; // Email'e özel doğrulama kodlarını ve sürelerinin tutulması
+
+// 6 haneli rastgele doğrulama kodu üretir
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const addAccount = async (req, res) => {
-  const { email, companyName, fullName, password, code } = req.body;
-
-  if (!code) {
-    const verificationCode = generateVerificationCode();
-    verificationCodes[email] = verificationCode;
-
-    const message = `
+// Doğrulama kodunu email ile gönder
+const sendVerificationEmail = async (email, code, subject, messageBody) => {
+  const message = `
 Sayın Kullanıcımız,
 
-Demo hesap talebiniz başarıyla alınmıştır.
+${messageBody}
 
-Hesabınızı oluşturabilmemiz için aşağıdaki doğrulama kodunu kullanarak işleminizi tamamlayabilirsiniz:
-
-Doğrulama Kodunuz: ${verificationCode}
+Doğrulama Kodunuz: ${code}
 
 Bu kod 10 dakika boyunca geçerlidir. Güvenliğiniz için kimseyle paylaşmayınız.
 
@@ -35,22 +31,59 @@ Bu kod 10 dakika boyunca geçerlidir. Güvenliğiniz için kimseyle paylaşmayı
 Destek Ekibi
 `;
 
-    await sendEmail(email, "Demo Hesap Talebi", message);
+  await sendEmail(email, subject, message); // Email gönderme işlemi
+};
+
+// Hesap oluşturma endpoint'i
+const addAccount = async (req, res) => {
+  const { email, companyName, fullName, password, code } = req.body;
+
+  // Eğer kod yoksa, doğrulama kodu üret ve gönder
+  if (!code) {
+    const verificationCode = generateVerificationCode();
+    verificationCodes[email] = {
+      code: verificationCode,
+      expiresAt: Date.now() + CODE_EXPIRATION_TIME,
+    };
+
+    await sendVerificationEmail(
+      email,
+      verificationCode,
+      "Demo Hesap Talebi",
+      "Demo hesap talebiniz başarıyla alınmıştır.\n\nHesabınızı oluşturabilmemiz için aşağıdaki doğrulama kodunu kullanarak işleminizi tamamlayabilirsiniz:"
+    );
+
     return res.status(200).json({ status: "code_sent" });
   }
 
-  if (verificationCodes[email] !== code) {
-    return res
-      .status(400)
-      .json({ status: "invalid_code", message: "Doğrulama kodu geçersiz." });
+  // Kod girilmişse, doğruluğunu ve süresini kontrol et
+  const savedCodeObj = verificationCodes[email];
+  if (
+    !savedCodeObj ||
+    savedCodeObj.code !== code ||
+    savedCodeObj.expiresAt < Date.now() // Geçerlilik süresi
+  ) {
+    return res.status(400).json({
+      status: "invalid_code",
+      message: "Doğrulama kodu geçersiz veya süresi dolmuş.",
+    });
   }
 
   try {
+    // Aynı email ile kullanıcı daha önce kayıt olmuşsa hata döner
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(409)
+        .json({ status: "error", message: "Bu email zaten kayıtlı." });
+    }
+    // Yeni şirket oluştur
     const company = await new CompanyModel({
       uuid: uuidv4(),
       name: companyName,
       email: email,
     }).save();
+    // Yeni kullanıcı oluştur
 
     await new UserModel({
       uuid: uuidv4(),
@@ -60,7 +93,7 @@ Destek Ekibi
       password: await bcrypt.hash(password, 10),
     }).save();
 
-    delete verificationCodes[email];
+    delete verificationCodes[email]; // kayıt işlemleri sonrası üretilen kodu sil
 
     return res
       .status(201)
@@ -74,59 +107,63 @@ Destek Ekibi
   }
 };
 
+// Kullanıcı giriş işlemi
 const login = async (req, res) => {
   try {
     const { email, password, code } = req.body;
-
+    // Eğer kod gönderilmemişse, yeni doğrulama kodu gönder
     if (!code) {
       const verificationCode = generateVerificationCode();
-      verificationCodes[email] = verificationCode;
+      verificationCodes[email] = {
+        code: verificationCode,
+        expiresAt: Date.now() + CODE_EXPIRATION_TIME,
+      };
 
-      const message = `
-Sayın Kullanıcımız,
+      await sendVerificationEmail(
+        email,
+        verificationCode,
+        "Hesaba Giriş Doğrulaması",
+        "Sistemimize giriş yapmak için gerekli olan doğrulama kodunuz aşağıda yer almaktadır:"
+      );
 
-Sistemimize giriş yapmak için gerekli olan doğrulama kodunuz aşağıda yer almaktadır:
-
-🔐 Giriş Doğrulama Kodunuz: ${verificationCode}
-
-Bu kod, yalnızca 10 dakika boyunca geçerlidir ve güvenliğiniz açısından üçüncü kişilerle paylaşmamanız önemle tavsiye edilir.
-
-Eğer bu talebi siz gerçekleştirmediyseniz, lütfen bizimle derhal iletişime geçiniz.
-
-Sağlıklı günler dileriz.  
-Destek Ekibi
-`;
-
-      await sendEmail(email, "Hesaba Giriş Doğrulaması", message);
       return res.status(200).json({ status: "code_sent" });
     }
 
-    if (verificationCodes[email] !== code) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Doğrulama kodu geçersiz." });
+    // Kod doğrulaması
+    const savedCodeObj = verificationCodes[email];
+    if (
+      !savedCodeObj ||
+      savedCodeObj.code !== code ||
+      savedCodeObj.expiresAt < Date.now()
+    ) {
+      return res.status(400).json({
+        success: false,
+        status: "invalid_code",
+        message: "Doğrulama kodu geçersiz veya süresi dolmuş.",
+      });
     }
-
+    // Kullanıcı var mı kontrolü
     const user = await UserModel.findOne({ email });
     if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "Kullanıcı bulunamadı." });
     }
-
+    // Şifre kontrolü
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: "Şifre hatalı." });
     }
-
+    // JWT token oluştur
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    delete verificationCodes[email];
+    delete verificationCodes[email]; // Oluşturulan Kod silinir
 
+    // Giriş başarılı, token ve kullanıcı bilgisi dönülür
     return res.status(200).json({
       success: true,
       message: "Giriş başarılı.",
