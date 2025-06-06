@@ -2,6 +2,7 @@ const CompanyModel = require("../models/Company");
 const UserModel = require("../models/User");
 const nodemailer = require("nodemailer");
 const { v4: uuidv4 } = require("uuid");
+const bcrypt = require('bcrypt');
 
 let verificationCodes = {};
 
@@ -68,7 +69,7 @@ Destek Ekibi
       company_id: company._id,
       name: fullName,
       email: email,
-      password: password
+      password: await bcrypt.hash(password, 10)
     }).save();
 
     delete verificationCodes[email];
